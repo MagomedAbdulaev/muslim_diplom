@@ -23,7 +23,7 @@ def get_suppliers(request):
 
     client = Client(
         host="https://ollama.com",
-        headers={'Authorization': 'Bearer ' + 'f211216e19154bdda1db4d033dd399b6.BbQ_gVPrB44_QomJcr2NRKzw'}
+        headers={'Authorization': 'Bearer ' + ''}
     )
 
     prompt = (
