@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    /* Стиль для красной рамки при ошибке валидации */
+    .error-border { border: 2px solid red !important; }
+    .search__submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* Стили для спиннера */
+    .spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255,255,255,0.3);
+        border-radius: 50%;
+        border-top-color: #fff;
+        animation: spin 0.8s linear infinite;
+        margin-right: 8px;
+        vertical-align: middle;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .search__submit {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+</style>
+
+<div class="search">
+    <p class="search__description">Введите запрос для поиска поставщиков</p>
+    <div class="search__form">
+        <header class="search__header">
+            <input type="search" name="search" placeholder="Введите запрос..." class="search__input">
+            <button type="button" class="search__submit" id="search_suppliers">Найти</button>
+        </header>
+        <section class="search__filter">
+            <div class="search__item">
+                <input type="checkbox" checked class="search__checkbox search__checkbox--rating">
+                <span>Рейтинг от:</span>
+                <input type="text" class="search__rating" onkeypress="return (event.charCode >= 48 && event.charCode <= 57)" oninput="if(this.value > 5) this.value = 5;" placeholder="2-5">
+                <span>⭐</span>
+            </div>
+            <div class="search__item">
+                <input type="checkbox" checked class="search__checkbox search__checkbox--experience">
+                <span>Стаж от:</span>
+                <input type="text" class="search__experience" onkeypress="return (event.charCode >= 48 && event.charCode <= 57)" oninput="if(this.value > 15) this.value = 15;" placeholder="2-15">
+                <span>лет</span>
+            </div>
+            <div class="search__item">
+                <input type="checkbox" checked class="search__checkbox search__checkbox--phone">
+                <span>Только с номером телефона</span>
+            </div>
+        </section>
+    </div>
+    <div class="table-container">
+        <table class="suppliers-table">
+            <thead>
+                <tr>
+                    <th>Компания / ИП</th>
+                    <th>Контакты</th>
+                    <th>Адрес</th>
+                    <th>Стаж</th>
+                    <th>Рейтинг</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Сюда будут прилетать данные -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchSuppliersBtn = document.querySelector('#search_suppliers');
+    const tableBody = document.querySelector('.suppliers-table tbody');
+
+    // 1. Делегирование событий для кнопок карт (чтобы работало на новых строках)
+    tableBody.addEventListener('click', function(e) {
+        if (e.target && e.target.classList.contains('map-btn')) {
+            const row = e.target.closest('tr');
+            const address = row.cells[2].innerText;
+            const mapUrl = `https://yandex.ru/maps/?text=${encodeURIComponent(address)}`;
+            window.open(mapUrl, '_blank');
+        }
+    });
+
+    // 2. Функция отрисовки данных
+    const renderSuppliers = (suppliers) => {
+        tableBody.innerHTML = '';
+        if (!suppliers || suppliers.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center">Ничего не найдено</td></tr>';
+            return;
+        }
+
+        suppliers.forEach(item => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="company-name">${item.name}</td>
+                <td>
+                    <div class="contact-info">
+                        <span class="contact-name">${item.owner}</span>
+                        <span class="contact-phone">${item.phone || '—'}</span>
+                        <span class="contact-email">${item.email || '—'}</span>
+                    </div>
+                </td>
+                <td>г. ${item.city}, ${item.address}</td>
+                <td>
+                    <div class="experience-box">
+                        <strong>${item.experience}</strong>
+                        <button class="map-btn">УКАЗАТЬ НА КАРТЕ</button>
+                    </div>
+                </td>
+                <td class="rating-val">${item.rating} ⭐</td>
+            `;
+            tableBody.appendChild(row);
+        });
+    };
+
+    // 3. Обработчик кнопки Найти
+    searchSuppliersBtn.addEventListener('click', () => {
+        const inputSearch = document.querySelector('.search__input');
+        const inputRating = document.querySelector('.search__rating');
+        const inputExperience = document.querySelector('.search__experience');
+        const city = document.querySelector('.selected__text');
+
+        const isRatingChecked = document.querySelector('.search__checkbox--rating').checked;
+        const isExperienceChecked = document.querySelector('.search__checkbox--experience').checked;
+        const hasPhoneOnly = document.querySelector('.search__checkbox--phone').checked;
+
+        // Сброс стилей
+        [inputSearch, inputRating, inputExperience].forEach(el => el.classList.remove('error-border'));
+
+        // Валидация
+        let isValid = true;
+        if (!inputSearch.value.trim()) { inputSearch.classList.add('error-border'); isValid = false; }
+        if (isRatingChecked && !inputRating.value.trim()) { inputRating.classList.add('error-border'); isValid = false; }
+        if (isExperienceChecked && !inputExperience.value.trim()) { inputExperience.classList.add('error-border'); isValid = false; }
+
+        if (!isValid) return;
+
+        // Состояние загрузки - показываем спиннер
+        searchSuppliersBtn.disabled = true;
+        searchSuppliersBtn.innerHTML = '<div class="spinner"></div> Ищем...';
+
+        const params = new URLSearchParams({
+            search: inputSearch.value,
+            phone_only: hasPhoneOnly,
+            city: city ? city.textContent.trim() : ''
+        });
+        if (isRatingChecked) params.append('rating', inputRating.value);
+        if (isExperienceChecked) params.append('experience', inputExperience.value);
+
+        fetch(`get_suppliers/?${params.toString()}`)
+            .then(response => {
+                if (!response.ok) throw new Error('Ошибка при запросе');
+                return response.json();
+            })
+            .then(result => {
+                // Если бэкенд возвращает JSON, берем поле data
+                const suppliers = Array.isArray(result.data) ? result.data : [];
+                renderSuppliers(suppliers);
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                alert('Ошибка: ' + error.message);
+            })
+            .finally(() => {
+                // Возвращаем кнопку в исходное состояние
+                searchSuppliersBtn.disabled = false;
+                searchSuppliersBtn.innerHTML = 'Найти';
+            });
+    });
+});
+</script>
+{% endblock %}

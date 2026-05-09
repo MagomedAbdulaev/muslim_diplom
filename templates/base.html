@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Интеллектуальный Агент поиска поставщиков">
+    <link rel="icon" type="image/svg+xml" href='{% static "images/favicon.png" %}'>
+    <link rel="stylesheet" href="{% static 'css/normalize.css' %}">
+    <link rel="stylesheet" href="{% static 'css/reset.css' %}">
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/header.css' %}">
+    <title>{{ title }}</title>
+</head>
+<body>
+  <div class="wrapper">
+    {% include 'header.html' %}
+    <main class="main">
+        {% block content %}
+        {% endblock %}
+    </main>
+  </div>
+
+    <script src="{% static 'js/header.js' %}"></script>
+    <script src="{% static 'js/base.js' %}"></script>
+</body>
+</html>

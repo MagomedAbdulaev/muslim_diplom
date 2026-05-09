@@ -1,0 +1,20 @@
+{% load static %}
+<header class="header">
+  <h1 class="header__title header__title--deskstop">Интеллектуальный Агент Поиска Поставщиков</h1>
+  <h1 class="header__title header__title--mobile">Интеллектуальный Агент</h1>
+  <div class="city">
+    <p class="city__description">Город:</p>
+    <div class="city__selected">
+      <p class="selected__text">Махачкала</p>
+      <img src="{% static 'images/arrow_down.png' %}" alt="Раскрыть" class="selected__icon" width="20" height="20">
+    </div>
+    <ul class="city__list city__list--none">
+      <li class="city__option">Екатеринбург</li>
+      <li class="city__option">Нижний Новгород</li>
+      <li class="city__option">Казань</li>
+      <li class="city__option">Санкт-Петербург</li>
+      <li class="city__option">Москва</li>
+      <li class="city__option">Махачкала</li>
+    </ul>
+  </div>
+</header>
